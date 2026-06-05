@@ -1,11 +1,48 @@
+var EVAL_SCRIPT_TIMEOUT_MS = 3000;
+var PANEL_EXTENSION_ID = "com.jinshihui.paintablepalette.panel";
+
 function eval_script(script_text) {
   if (!window.__adobe_cep__ || typeof window.__adobe_cep__.evalScript !== "function") {
-    throw new Error("__adobe_cep__.evalScript not available. Are you running in a CEP panel?");
+    return Promise.reject(new Error("__adobe_cep__.evalScript not available."));
   }
-  return new Promise((resolve) => window.__adobe_cep__.evalScript(script_text, resolve));
+  return new Promise(function (resolve, reject) {
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (!settled) { settled = true; reject(new Error("evalScript timed out")); }
+    }, EVAL_SCRIPT_TIMEOUT_MS);
+    window.__adobe_cep__.evalScript(script_text, function (result) {
+      if (!settled) { settled = true; clearTimeout(timer); resolve(result); }
+    });
+  });
+}
+
+function keep_panel_persistent() {
+  if (!window.__adobe_cep__ || typeof window.__adobe_cep__.dispatchEvent !== "function") return;
+
+  try {
+    var event = typeof window.CSEvent === "function"
+      ? new window.CSEvent("com.adobe.PhotoshopPersistent", "APPLICATION")
+      : { type: "com.adobe.PhotoshopPersistent", scope: "APPLICATION" };
+    event.extensionId = PANEL_EXTENSION_ID;
+    event.data = PANEL_EXTENSION_ID;
+    window.__adobe_cep__.dispatchEvent(event);
+    console.log("[paintablepalette] PhotoshopPersistent dispatched:", PANEL_EXTENSION_ID);
+  } catch (err) {
+    console.warn("[paintablepalette] keep panel persistent failed:", err);
+  }
 }
 
 console.log("[paintablepalette] main.js loaded");
+
+window.addEventListener("error", function (ev) {
+  console.error("[paintablepalette] uncaught:", ev.message, ev.filename, ev.lineno);
+  set_status("ERR: " + (ev.message || "unknown"));
+});
+window.addEventListener("unhandledrejection", function (ev) {
+  var msg = ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason);
+  console.error("[paintablepalette] unhandled rejection:", msg);
+  set_status("ERR: " + msg);
+});
 
 function clamp_0_255(value) {
   return Math.max(0, Math.min(255, value));
@@ -45,8 +82,8 @@ async function set_foreground_rgb(rgb) {
   }
 }
 
-const W = 300;
-const H = 300;
+const W = 400;
+const H = 400;
 const BG_R = 232;
 const BG_G = 232;
 const BG_B = 232;
@@ -102,11 +139,21 @@ function init_buffers() {
 function open_db() {
   if (db_promise) return db_promise;
 
+  const IDB_TIMEOUT_MS = 3000;
+
   db_promise = new Promise((resolve, reject) => {
     if (!window.indexedDB) {
       reject(new Error("indexedDB not available"));
       return;
     }
+
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new Error("indexedDB open timed out"));
+      }
+    }, IDB_TIMEOUT_MS);
 
     const req = window.indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
@@ -115,8 +162,12 @@ function open_db() {
         db.createObjectStore(DB_STORE, { keyPath: "id" });
       }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error || new Error("indexedDB open failed"));
+    req.onsuccess = () => {
+      if (!settled) { settled = true; clearTimeout(timer); resolve(req.result); }
+    };
+    req.onerror = () => {
+      if (!settled) { settled = true; clearTimeout(timer); reject(req.error || new Error("indexedDB open failed")); }
+    };
   });
 
   return db_promise;
@@ -386,37 +437,33 @@ async function on_pointer_down(e) {
   last_x = null;
   last_y = null;
 
-  if (typeof PointerEvent !== "undefined" && canvas_el && canvas_el.setPointerCapture) {
-    try {
-      canvas_el.setPointerCapture(e.pointerId);
-    } catch (_) {
-      // ignore
-    }
+  if (e.pointerId != null && canvas_el && canvas_el.setPointerCapture) {
+    try { canvas_el.setPointerCapture(e.pointerId); } catch (_) {}
   }
 
-  const pos = get_pos(e);
+  var pos = get_pos(e);
   if (is_pick_mode(e)) {
-    await do_pick_color(pos.x, pos.y);
+    do_pick_color(pos.x, pos.y);
     return;
   }
 
   try {
-    const fg = await get_foreground_rgb();
+    var fg = await get_foreground_rgb();
     brush_color = fg;
     set_swatch(fg);
   } catch (err) {
-    set_status(`WARN(read fg): ${err && err.message ? err.message : String(err)}`);
+    set_status("WARN(read fg): " + (err && err.message ? err.message : String(err)));
   }
 
-  set_status(`Paint: rgb(${brush_color.r}, ${brush_color.g}, ${brush_color.b})`);
+  set_status("Paint: rgb(" + brush_color.r + ", " + brush_color.g + ", " + brush_color.b + ")");
   draw_stamp(pos.x, pos.y);
 }
 
-async function on_pointer_move(e) {
+function on_pointer_move(e) {
   if (!is_drawing) return;
-  const pos = get_pos(e);
+  var pos = get_pos(e);
   if (is_pick_mode(e)) {
-    await do_pick_color(pos.x, pos.y);
+    do_pick_color(pos.x, pos.y);
   } else {
     draw_stroke_to(pos.x, pos.y);
   }
@@ -465,6 +512,7 @@ function bind_ui() {
 async function init() {
   const t0 = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
   canvas_el = document.getElementById("palette-canvas");
+  keep_panel_persistent();
   if (!canvas_el) {
     set_status("ERROR: canvas not found");
     return;
@@ -477,6 +525,58 @@ async function init() {
   }
   image_data = ctx.createImageData(W, H);
   init_buffers();
+
+  image_data.data.set(pixel_buffer);
+  ctx.putImageData(image_data, 0, 0);
+
+  bind_ui();
+
+  const mode_el = document.getElementById("select-mode");
+  if (mode_el) {
+    mode_el.value = color_mode;
+    if (mode_el.value !== color_mode) {
+      color_mode = "rgb";
+      mode_el.value = color_mode;
+    }
+  }
+
+  // 同时绑 pointer + mouse 事件，防止某些 Mac CEF 中 PointerEvent 存在但不触发
+  var pointer_active = false;
+  function wrap_down(ev) {
+    if (ev.type === "pointerdown") pointer_active = true;
+    if (ev.type === "mousedown" && pointer_active) return;
+    on_pointer_down(ev);
+  }
+  function wrap_move(ev) {
+    if (ev.type === "mousemove" && pointer_active) return;
+    on_pointer_move(ev);
+  }
+  function wrap_up(ev) {
+    if ((ev.type === "mouseup" || ev.type === "mouseleave") && pointer_active) return;
+    on_pointer_up(ev);
+  }
+
+  if (typeof PointerEvent !== "undefined") {
+    canvas_el.addEventListener("pointerdown", wrap_down);
+    canvas_el.addEventListener("pointermove", wrap_move);
+    canvas_el.addEventListener("pointerup", wrap_up);
+    canvas_el.addEventListener("pointerleave", wrap_up);
+  }
+  canvas_el.addEventListener("mousedown", wrap_down);
+  canvas_el.addEventListener("mousemove", wrap_move);
+  canvas_el.addEventListener("mouseup", wrap_up);
+  canvas_el.addEventListener("mouseleave", wrap_up);
+
+  document.addEventListener("keydown", function (e) {
+    if (e.keyCode === 18 || e.key === "Alt") alt_key_down = true;
+  });
+  document.addEventListener("keyup", function (e) {
+    if (e.keyCode === 18 || e.key === "Alt") alt_key_down = false;
+  });
+  window.addEventListener("blur", function () { alt_key_down = false; });
+
+  console.log("[paintablepalette] bindEvents ok.");
+
   let restored = false;
   let migrated = false;
   try {
@@ -499,39 +599,10 @@ async function init() {
     }
   }
 
-  image_data.data.set(pixel_buffer);
-  ctx.putImageData(image_data, 0, 0);
-
-  bind_ui();
-
-  const mode_el = document.getElementById("select-mode");
-  if (mode_el) {
-    mode_el.value = color_mode;
-    if (mode_el.value !== color_mode) {
-      color_mode = "rgb";
-      mode_el.value = color_mode;
-    }
+  if (restored) {
+    image_data.data.set(pixel_buffer);
+    ctx.putImageData(image_data, 0, 0);
   }
-
-  if (typeof PointerEvent !== "undefined") {
-    canvas_el.addEventListener("pointerdown", on_pointer_down);
-    canvas_el.addEventListener("pointermove", on_pointer_move);
-    canvas_el.addEventListener("pointerup", on_pointer_up);
-    canvas_el.addEventListener("pointerleave", on_pointer_up);
-  } else {
-    canvas_el.addEventListener("mousedown", on_pointer_down);
-    canvas_el.addEventListener("mousemove", on_pointer_move);
-    canvas_el.addEventListener("mouseup", on_pointer_up);
-    canvas_el.addEventListener("mouseleave", on_pointer_up);
-  }
-
-  document.addEventListener("keydown", function (e) {
-    if (e.keyCode === 18) alt_key_down = true;
-  });
-  document.addEventListener("keyup", function (e) {
-    if (e.keyCode === 18) alt_key_down = false;
-  });
-  window.addEventListener("blur", function () { alt_key_down = false; });
 
   console.log("[paintablepalette] init ok.");
   if (restored) console.log("[paintablepalette] state restored from indexedDB");
@@ -550,4 +621,9 @@ async function init() {
   console.log("[paintablepalette] init time ms:", Math.round(t1 - t0));
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", function () {
+  init().catch(function (err) {
+    console.error("[paintablepalette] init fatal:", err);
+    set_status("FATAL: " + (err && err.message ? err.message : String(err)));
+  });
+});

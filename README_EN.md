@@ -19,7 +19,7 @@ This project ships two installable zips on GitHub Releases:
 
 ## Features
 
-- Palette canvas (fixed 300×300)
+- Palette canvas (fixed 400×400)
 - Paint and mix using Photoshop’s current foreground color as the brush color
 - RGB-only: standard alpha blending
 - Mixbox-NC: paint-like mixing (latent-space blend)

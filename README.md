@@ -19,7 +19,7 @@ English: [README_EN.md](README_EN.md)
 
 ## 功能特性
 
-- 调色盘画布（固定 300x300）
+- 调色盘画布（固定 400x400）
 - 以 Photoshop 当前前景色作为笔刷颜色进行涂抹混色
 - RGB-only：常规 alpha blend 混色
 - Mixbox-NC：颜料感混色（latent space 混合）
