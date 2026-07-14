@@ -8,11 +8,13 @@
   <body>
     <div class="container">
       <div class="toolbar">
-        <select id="select-mode">
+        <select id="select-mode" title="Color mixing mode">
+          <option value="mixbox">Pigment</option>
           <option value="rgb">RGB</option>
         </select>
-        <button id="btn-clear">Clear</button>
+        <span class="license-note" title="Mixbox is licensed for non-commercial use only">NC</span>
         <button id="btn-pick">Pick</button>
+        <button id="btn-import-selection">Import selection</button>
       </div>
 
       <div class="statusbar">
@@ -20,11 +22,28 @@
         <span id="status-text">Ready</span>
       </div>
 
-      <div class="surface-wrap">
-        <canvas id="palette-canvas" width="400" height="400" class="surface"></canvas>
+      <div class="palette-area">
+        <div class="paper-tabs" aria-label="Palette papers">
+          <button class="paper-tab active" data-paper="0" title="Palette paper 1">1</button>
+          <button class="paper-tab" data-paper="1" title="Palette paper 2">2</button>
+          <button class="paper-tab" data-paper="2" title="Palette paper 3">3</button>
+          <button class="paper-tab" data-paper="3" title="Palette paper 4">4</button>
+          <button id="btn-delete-paper" class="icon-button" title="Clear current palette paper">&#128465;</button>
+        </div>
+        <div class="surface-wrap">
+          <canvas id="palette-canvas" width="400" height="400" class="surface"></canvas>
+        </div>
+      </div>
+
+      <div class="color-box">
+        <span class="color-box-label">Colors</span>
+        <div id="saved-colors" class="saved-colors" aria-label="Saved colors"></div>
+        <button id="btn-save-color" class="color-action" title="Save current foreground color">+ Add</button>
+        <button id="btn-edit-colors" class="color-action" title="Reorder or delete saved colors">Edit</button>
       </div>
     </div>
 
+    <script src="js/mixbox.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>
