@@ -1,18 +1,25 @@
-# Paintable Palette 调色盘插件
+# Paintable Palette 调色盘插件（增强 Fork）
 
-> 这是基于 [jinshihui/Paintable-Palette-PS](https://github.com/jinshihui/Paintable-Palette-PS) 制作的个人定制版本。下方保留原项目说明，安装与使用请以本 Fork 的改动为准。
+本项目 Fork 自 [jinshihui/Paintable-Palette-PS](https://github.com/jinshihui/Paintable-Palette-PS)。它保留原项目“用 Photoshop 当前前景色在面板上涂抹、混色、取色”的核心方式，并补上更适合实际绘画调色的工作流。
 
-![定制版：调色纸、选区导入与常用颜色盒](00assets/custom-palette-overview.png)
+![增强版：调色纸、选区导入与常用颜色盒](00assets/custom-palette-overview.png)
 
-## 本 Fork 的改动
+## 与原项目的区别
 
-- **4 张独立调色纸**：左侧 1–4 切换，内容会自动保存；垃圾桶仅清空当前调色纸。
-- **从 Photoshop 选区导入**：将当前选区按实际尺寸完整导入为调色纸，不再被固定尺寸截断。
-- **24 格常用颜色盒**：可用 `+ Add` 保存当前前景色；开启 `Edit` 后可拖动排序、点击 `×` 删除。
-- **自带mixbox**：默认使用 Mixbox 的非商业颜料混色（NC），仍可切换到普通 RGB 混色。
-- **保留原有工作习惯**：面板用 Photoshop 当前前景色涂抹；取色后回写 Photoshop 前景色。它不替换 Photoshop 当前笔刷或橡皮擦预设。
+| 项目 | 原项目 | 本 Fork |
+| --- | --- | --- |
+| 调色纸 | 单张画布，使用 `Clear` 清空 | **4 张独立调色纸**，可切换并自动保存；垃圾桶只清空当前一张 |
+| 参考图导入 | 无 | **导入当前活动图层的选区内容**：按真实选区尺寸完整截取并放入调色纸，方便直接从画面提取配色 |
+| 常用色 | 无固定颜色储存区 | **24 格常用颜色盒**，可保存当前前景色；编辑模式支持拖动排序与删除 |
+| 混色 | 原有 RGB 线性混合 | 默认使用 **Mixbox 非商业颜料混色**，并可切换回 RGB |
 
-完整的功能说明、限制与许可证见：[CUSTOM_CHANGES.md](CUSTOM_CHANGES.md)。
+### 导入 Photoshop 选区作为调色纸
+
+在 Photoshop 中先选中要参考的图层并框选区域，再点击面板顶部的 **Import selection**。插件会以当前活动图层中选区的实际宽高导入内容，不受原先固定小尺寸截取的限制；导入结果会放到当前调色纸，之后可在上面直接取色或涂抹混色。
+
+> 此功能为本 Fork 新增，原项目没有提供。
+
+更完整的功能说明、限制与 Mixbox 许可证见：[CUSTOM_CHANGES.md](CUSTOM_CHANGES.md)。
 
 ---
 
