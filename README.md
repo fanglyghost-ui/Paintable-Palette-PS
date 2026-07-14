@@ -1,6 +1,6 @@
-# Paintable Palette 调色盘插件（增强 Fork）
+# Paintable Palette 调色盘插件
 
-本项目 Fork 自 [jinshihui/Paintable-Palette-PS](https://github.com/jinshihui/Paintable-Palette-PS)。它保留原项目“用 Photoshop 当前前景色在面板上涂抹、混色、取色”的核心方式，并补上更适合实际绘画调色的工作流。
+本项目 Fork 自 [jinshihui/Paintable-Palette-PS](https://github.com/jinshihui/Paintable-Palette-PS)。它保留原项目“用 Photoshop 当前前景色在面板上涂抹、混色、取色”的核心方式，并根据个人工作流习惯修改。
 
 ![增强版：调色纸、选区导入与常用颜色盒](00assets/custom-palette-overview.png)
 
@@ -17,7 +17,6 @@
 
 在 Photoshop 中先选中要参考的图层并框选区域，再点击面板顶部的 **Import selection**。插件会以当前活动图层中选区的实际宽高导入内容，不受原先固定小尺寸截取的限制；导入结果会放到当前调色纸，之后可在上面直接取色或涂抹混色。
 
-> 此功能为本 Fork 新增，原项目没有提供。
 
 更完整的功能说明、限制与 Mixbox 许可证见：[CUSTOM_CHANGES.md](CUSTOM_CHANGES.md)。
 
