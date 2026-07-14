@@ -1,4 +1,22 @@
-# Paintable Palette 调色盘插件 (PS)
+# Paintable Palette 调色盘插件（个人定制 Fork）
+
+> 这是基于 [jinshihui/Paintable-Palette-PS](https://github.com/jinshihui/Paintable-Palette-PS) 制作的个人定制版本。下方保留原项目说明，安装与使用请以本 Fork 的改动为准。
+
+![定制版：调色纸、选区导入与常用颜色盒](00assets/custom-palette-overview.png)
+
+## 本 Fork 的改动
+
+- **4 张独立调色纸**：左侧 1–4 切换，内容会自动保存；垃圾桶仅清空当前调色纸。
+- **从 Photoshop 选区导入**：将当前选区按实际尺寸完整导入为调色纸，不再被固定尺寸截断。
+- **24 格常用颜色盒**：可用 `+ Add` 保存当前前景色；开启 `Edit` 后可拖动排序、点击 `×` 删除。
+- **更自然的颜料混色**：默认使用 Mixbox 的非商业颜料混色（NC），仍可切换到普通 RGB 混色。
+- **保留原有工作习惯**：面板用 Photoshop 当前前景色涂抹；取色后回写 Photoshop 前景色。它不替换 Photoshop 当前笔刷或橡皮擦预设。
+
+完整的功能说明、限制与许可证见：[CUSTOM_CHANGES.md](CUSTOM_CHANGES.md)。
+
+---
+
+## 原项目说明
 
 English: [README_EN.md](README_EN.md)
 
